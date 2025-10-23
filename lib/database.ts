@@ -1,6 +1,6 @@
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
-import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite';
+import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite/next';
 
 import type { DictionaryEntry } from '@/types/dictionary';
 
