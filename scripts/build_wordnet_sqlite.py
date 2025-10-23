@@ -7,7 +7,7 @@ import json
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 import nltk
 from nltk.corpus import wordnet as wn
@@ -22,16 +22,48 @@ def ensure_wordnet() -> None:
         wn.ensure_loaded()
 
 
-def iter_entries() -> Iterable[Tuple[str, str, int, str, List[str]]]:
-    """Yield entries extracted from WordNet.
+def load_extra_examples(path: Path) -> Dict[Tuple[str, str], List[str]]:
+    """Load additional examples from a JSONL file.
 
-    Returns tuples of `(word, pos, sense_number, definition, examples)`.
+    Each line must contain the keys ``lemma``, ``pos`` and ``sentence``.
     """
+    if not path.exists():
+        return {}
+
+    extras: Dict[Tuple[str, str], List[str]] = defaultdict(list)
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as exc:  # pragma: no cover - defensive
+                raise ValueError(f"Invalid JSON on line {line_number} of {path}") from exc
+
+            lemma = (payload.get("lemma") or "").strip()
+            pos = (payload.get("pos") or "").strip()
+            sentence = (payload.get("sentence") or "").strip()
+
+            if not lemma or not sentence:
+                continue
+
+            key = (lemma.lower(), pos)
+            extras[key].append(sentence)
+
+    return extras
+
+
+def iter_entries(extra_examples: Dict[Tuple[str, str], List[str]]) -> Iterable[Tuple[str, str, int, str, List[str]]]:
+    """Yield entries extracted from WordNet enriched with extra examples."""
+
     sense_counts: defaultdict[Tuple[str, str], int] = defaultdict(int)
+    headword_examples: Dict[Tuple[str, str], List[str]] = defaultdict(list)
+    headword_seen: Dict[Tuple[str, str], set[str]] = defaultdict(set)
+    extras_consumed: set[Tuple[str, str]] = set()
 
     for synset in wn.all_synsets():
         definition = synset.definition()
-        examples = synset.examples()
+        wordnet_examples = synset.examples()
         pos = synset.pos() or ""
 
         for lemma in synset.lemmas():
@@ -39,12 +71,32 @@ def iter_entries() -> Iterable[Tuple[str, str, int, str, List[str]]]:
             key = (word.lower(), pos)
             sense_counts[key] += 1
             sense_number = sense_counts[key]
+
+            examples_for_headword = headword_examples[key]
+            seen_examples = headword_seen[key]
+
+            for example in wordnet_examples:
+                example_text = example.strip()
+                if example_text and example_text not in seen_examples and len(examples_for_headword) < 12:
+                    examples_for_headword.append(example_text)
+                    seen_examples.add(example_text)
+
+            if key not in extras_consumed:
+                for extra_example in extra_examples.get(key, []):
+                    if len(examples_for_headword) >= 12:
+                        break
+                    example_text = extra_example.strip()
+                    if example_text and example_text not in seen_examples:
+                        examples_for_headword.append(example_text)
+                        seen_examples.add(example_text)
+                extras_consumed.add(key)
+
             yield (
                 word,
                 pos,
                 sense_number,
                 definition,
-                examples,
+                list(examples_for_headword),
             )
 
 
@@ -108,7 +160,9 @@ def build_database(output_path: Path) -> None:
     with sqlite3.connect(output_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON;")
         create_schema(conn)
-        populate(conn, iter_entries())
+        extra_examples_path = Path("extras/examples_en.jsonl")
+        extra_examples = load_extra_examples(extra_examples_path)
+        populate(conn, iter_entries(extra_examples))
 
 
 def main() -> None:
