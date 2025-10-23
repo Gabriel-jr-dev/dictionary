@@ -1,51 +1,85 @@
-# Welcome to your Expo app 👋
+# Dictionary (English → English)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An offline English dictionary built with Expo, React Native, and TypeScript. The application loads a curated SQLite
+snapshot generated from the WordNet corpus and supports instant prefix and full-text lookup for definitions and usage
+examples.
 
-## Get started
+## Features
 
-1. Install dependencies
+- 📚 **WordNet-backed content** – only English definitions and usage examples are bundled.
+- 🔍 **Hybrid search** – prefix matching for fast word lookup plus FTS-powered definition search.
+- 📱 **Expo/React Native UI** – clean search experience with reusable components.
+- 🗃️ **Sandboxed database** – automatic copy of the bundled SQLite file to the device sandbox.
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+- Node.js 18 or newer
+- npm 9 or newer
+- Python 3.9+
 
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Install JavaScript dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Generate the SQLite database
 
-## Learn more
+Binary assets cannot be committed to this repository, so the SQLite dictionary must be generated locally before running
+the app. The helper script `npm run build:db` orchestrates the build:
 
-To learn more about developing your project with Expo, look at the following resources:
+1. Install Python dependencies:
+   ```bash
+   python3 -m pip install -r requirements.txt
+   ```
+2. Build the database (skipped automatically when the file already exists):
+   ```bash
+   npm run build:db
+   ```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+`npm run build:db` calls `scripts/ensure-database.cjs`, which invokes `scripts/build_wordnet_sqlite.py` to download the
+WordNet corpus via NLTK (first run only), extract every lemma/definition/example, and write
+`assets/databases/base.sqlite` with an FTS5 virtual table for search. Re-run the command whenever you need to refresh the
+database. You can pass `--force` to rebuild unconditionally:
 
-## Join the community
+```bash
+npm run build:db -- --force
+```
 
-Join our community of developers creating universal apps.
+If you prefer to call Python directly, run:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# dictionary
+```bash
+python3 scripts/build_wordnet_sqlite.py
+```
+
+Set `SKIP_DICTIONARY_BUILD=1` to bypass the helper in CI environments where the database is provided through another
+channel.
+
+> **Note:** Only English→English content (definitions and usage examples) is included in the generated database.
+
+## Run the Expo development server
+
+The package scripts automatically ensure the SQLite database exists before the packager boots.
+
+```bash
+npm start
+```
+
+`npm start` triggers the `prestart` hook, which runs `npm run build:db` before launching `expo start`. The Metro config
+also invokes the same helper so `npx expo start` works in a pinch, but using the npm scripts keeps the workflow
+consistent.
+
+Use the terminal prompts to open the project in Expo Go, an emulator, or a development build.
+
+## Database module
+
+The React Native client uses `lib/database.ts` to copy `base.sqlite` from the app bundle into the sandbox (`documentDirectory/SQLite`)
+and exposes helpers for prefix and full-text searches. Results are parsed into strongly typed `DictionaryEntry` objects
+for the UI components.
+
+## Licensing and attribution
+
+- WordNet 3.1 © 2010 by the Princeton University. WordNet is provided under its own [license](https://wordnet.princeton.edu/license) and is only used to supply English definitions and examples.
+- The generated SQLite database is a direct transformation of the WordNet corpus for English-only usage and must be
+  produced locally before bundling or distributing the app.
+- This project otherwise follows the Expo and React Native licenses for the respective frameworks and packages.
