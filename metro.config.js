@@ -33,4 +33,7 @@ config.resolver = {
   },
 };
 
+config.resolver.assetExts.push('db', 'sqlite');
+
+
 module.exports = withNativeWind(config, { input: "./global.css" });
