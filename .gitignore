@@ -39,3 +39,6 @@ app-example
 
 **/tempobook/dynamic/
 **/tempobook/storyboards/
+
+# Generated SQLite database
+assets/databases/base.sqlite
