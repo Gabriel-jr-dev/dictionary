@@ -51,7 +51,34 @@ async function copyDatabaseFromAssets(): Promise<void> {
 
 export async function initializeDatabase(): Promise<SQLiteDatabase> {
   await copyDatabaseFromAssets();
-  return openDatabaseAsync(DATABASE_NAME);
+  const db = await openDatabaseAsync(DATABASE_NAME);
+  await validateDatabase(db);
+  return db;
+}
+
+async function validateDatabase(db: SQLiteDatabase): Promise<void> {
+  try {
+    const expectedTables = ['entries', 'entries_fts'];
+    const placeholders = expectedTables.map(() => '?').join(', ');
+    const rows = await db.getAllAsync<{ name: string }>(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name IN (${placeholders})`,
+      expectedTables
+    );
+    const found = new Set(rows.map((row) => row.name));
+    const missing = expectedTables.filter((table) => !found.has(table));
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Dictionary database is missing expected tables: ${missing.join(', ')}. ` +
+          'Regenerate the database with "npm run build:db -- --force".'
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to validate the dictionary database.');
+  }
 }
 
 type RawEntry = {

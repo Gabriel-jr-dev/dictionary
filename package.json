@@ -3,6 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "build:db": "node scripts/ensure-database.cjs",
+    "prestart": "npm run build:db",
+    "preandroid": "npm run build:db",
+    "preios": "npm run build:db",
+    "preweb": "npm run build:db",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
