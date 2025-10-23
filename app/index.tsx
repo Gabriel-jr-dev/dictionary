@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import SearchInput from '@/components/SearchInput';
 import SearchResultCard from '@/components/SearchResultCard';
-import { SQLiteDatabase } from 'expo-sqlite';
+import { SQLiteDatabase } from 'expo-sqlite/next';
 
 import { initializeDatabase, searchEntries } from '@/lib/database';
 import type { DictionaryEntry } from '@/types/dictionary';
