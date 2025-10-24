@@ -2,7 +2,7 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import { SQLiteDatabase, openDatabaseAsync } from 'expo-sqlite/next';
 
-import type { DictionaryEntry } from '@/types/dictionary';
+import type { DictionaryEntry, DictionarySense, DictionaryWordDetails } from '@/types/dictionary';
 
 const DATABASE_NAME = 'base.sqlite';
 
@@ -192,4 +192,53 @@ export async function searchEntries(
   }
 
   return merged;
+}
+
+export async function getEntryById(db: SQLiteDatabase, id: number): Promise<DictionaryEntry | null> {
+  if (!Number.isFinite(id)) {
+    return null;
+  }
+
+  const entry = await db.getFirstAsync<RawEntry>(
+    `SELECT id, word, pos, sense, definition, examples
+     FROM entries
+     WHERE id = ?`,
+    [id]
+  );
+
+  return entry ? parseEntry(entry) : null;
+}
+
+export async function getWordDetailsByEntryId(
+  db: SQLiteDatabase,
+  id: number
+): Promise<DictionaryWordDetails | null> {
+  const baseEntry = await getEntryById(db, id);
+  if (!baseEntry) {
+    return null;
+  }
+
+  const relatedEntries = await db.getAllAsync<RawEntry>(
+    `SELECT id, word, pos, sense, definition, examples
+     FROM entries
+     WHERE LOWER(word) = LOWER(?)
+     ORDER BY pos IS NULL, pos, sense`,
+    [baseEntry.word]
+  );
+
+  const senses: DictionarySense[] = relatedEntries.map((raw) => {
+    const parsed = parseEntry(raw);
+    return {
+      id: parsed.id,
+      pos: parsed.pos,
+      sense: parsed.sense,
+      definition: parsed.definition,
+      examples: parsed.examples,
+    };
+  });
+
+  return {
+    word: baseEntry.word,
+    senses,
+  };
 }

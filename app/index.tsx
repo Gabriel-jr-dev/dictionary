@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import SearchInput from '@/components/SearchInput';
 import SearchResultCard from '@/components/SearchResultCard';
@@ -16,6 +17,7 @@ export default function SearchScreen() {
   const [results, setResults] = useState<DictionaryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<SQLiteDatabase | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
@@ -119,7 +121,15 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
           <View className="px-6">
-            <SearchResultCard entry={item} />
+            <SearchResultCard
+              entry={item}
+              onPress={() =>
+                router.push({
+                  pathname: '/entry/[id]',
+                  params: { id: item.id.toString() },
+                })
+              }
+            />
           </View>
         )}
         ListEmptyComponent={
