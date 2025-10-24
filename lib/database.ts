@@ -193,3 +193,18 @@ export async function searchEntries(
 
   return merged;
 }
+
+export async function getEntryById(db: SQLiteDatabase, id: number): Promise<DictionaryEntry | null> {
+  if (!Number.isFinite(id)) {
+    return null;
+  }
+
+  const entry = await db.getFirstAsync<RawEntry>(
+    `SELECT id, word, pos, sense, definition, examples
+     FROM entries
+     WHERE id = ?`,
+    [id]
+  );
+
+  return entry ? parseEntry(entry) : null;
+}
