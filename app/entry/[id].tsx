@@ -3,12 +3,12 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-import { getWordDetailsByEntryId, initializeDatabase } from '@/lib/database';
-import type { DictionarySense, DictionaryWordDetails } from '@/types/dictionary';
+import { getEntryById, initializeDatabase } from '@/lib/database';
+import type { DictionaryEntry } from '@/types/dictionary';
 
 export default function EntryScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
-  const [entry, setEntry] = useState<DictionaryWordDetails | null>(null);
+  const [entry, setEntry] = useState<DictionaryEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export default function EntryScreen() {
 
       try {
         const db = await initializeDatabase();
-        const result = await getWordDetailsByEntryId(db, entryId);
+        const result = await getEntryById(db, entryId);
 
         if (!isMounted) {
           return;
@@ -98,81 +98,35 @@ export default function EntryScreen() {
         </View>
       ) : entry ? (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
-          <View className="space-y-8">
-            <View className="gap-3">
+          <View className="space-y-6">
+            <View className="gap-2">
               <Text className="text-4xl font-bold text-slate-900">{entry.word}</Text>
-              <PartsOfSpeechList senses={entry.senses} />
-              <Text className="text-sm text-slate-500">
-                Showing {entry.senses.length} definition{entry.senses.length === 1 ? '' : 's'} for this word.
-              </Text>
+              <View className="flex-row items-baseline gap-3">
+                {entry.pos ? <Text className="text-sm uppercase tracking-wide text-slate-500">{entry.pos}</Text> : null}
+                <Text className="text-xs font-medium text-slate-400">Sense {entry.sense}</Text>
+              </View>
             </View>
 
-            {entry.senses.length > 0 ? (
-              <View className="space-y-4">
-                {entry.senses.map((sense) => (
-                  <SenseCard key={sense.id} sense={sense} />
-                ))}
+            <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Definition</Text>
+              <Text className="mt-3 text-base leading-7 text-slate-700">{entry.definition}</Text>
+            </View>
+
+            {entry.examples.length > 0 ? (
+              <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
+                <View className="mt-3 space-y-3">
+                  {entry.examples.map((example, index) => (
+                    <Text key={index} className="text-base leading-7 text-slate-700">
+                      • {example}
+                    </Text>
+                  ))}
+                </View>
               </View>
-            ) : (
-              <View className="rounded-3xl border border-amber-100 bg-amber-50 p-6">
-                <Text className="text-base leading-7 text-amber-800">
-                  Definitions for this word are not available in the offline database.
-                </Text>
-              </View>
-            )}
+            ) : null}
           </View>
         </ScrollView>
       ) : null}
     </SafeAreaView>
-  );
-}
-
-function PartsOfSpeechList({ senses }: { senses: DictionarySense[] }) {
-  const uniqueParts = Array.from(
-    new Set(
-      senses
-        .map((sense) => sense.pos?.trim())
-        .filter((pos): pos is string => typeof pos === 'string' && pos.length > 0)
-    )
-  );
-
-  if (uniqueParts.length === 0) {
-    return null;
-  }
-
-  return (
-    <View className="flex-row flex-wrap gap-2">
-      {uniqueParts.map((pos) => (
-        <View key={pos} className="rounded-full bg-blue-100 px-3 py-1">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-blue-700">{pos.toUpperCase()}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function SenseCard({ sense }: { sense: DictionarySense }) {
-  const heading = sense.pos ? sense.pos.toUpperCase() : 'Definition';
-
-  return (
-    <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <View className="flex-row items-baseline justify-between">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          {heading}
-        </Text>
-        <Text className="text-xs font-medium text-slate-400">Sense {sense.sense}</Text>
-      </View>
-      <Text className="mt-3 text-base leading-7 text-slate-700">{sense.definition}</Text>
-      {sense.examples.length > 0 ? (
-        <View className="mt-4 space-y-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
-          {sense.examples.map((example, index) => (
-            <Text key={index} className="text-sm leading-6 text-slate-600">
-              • {example}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-    </View>
   );
 }

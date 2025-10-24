@@ -208,37 +208,3 @@ export async function getEntryById(db: SQLiteDatabase, id: number): Promise<Dict
 
   return entry ? parseEntry(entry) : null;
 }
-
-export async function getWordDetailsByEntryId(
-  db: SQLiteDatabase,
-  id: number
-): Promise<DictionaryWordDetails | null> {
-  const baseEntry = await getEntryById(db, id);
-  if (!baseEntry) {
-    return null;
-  }
-
-  const relatedEntries = await db.getAllAsync<RawEntry>(
-    `SELECT id, word, pos, sense, definition, examples
-     FROM entries
-     WHERE LOWER(word) = LOWER(?)
-     ORDER BY pos IS NULL, pos, sense`,
-    [baseEntry.word]
-  );
-
-  const senses: DictionarySense[] = relatedEntries.map((raw) => {
-    const parsed = parseEntry(raw);
-    return {
-      id: parsed.id,
-      pos: parsed.pos,
-      sense: parsed.sense,
-      definition: parsed.definition,
-      examples: parsed.examples,
-    };
-  });
-
-  return {
-    word: baseEntry.word,
-    senses,
-  };
-}
