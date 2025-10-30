@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,6 +17,7 @@ export default function SearchScreen() {
   const [results, setResults] = useState<DictionaryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<SQLiteDatabase | null>(null);
+  const latestRequestId = useRef(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -47,11 +48,15 @@ export default function SearchScreen() {
 
   const handleSearch = useCallback(
     async (term: string) => {
+      const requestId = ++latestRequestId.current;
       setQuery(term);
 
-      if (!term.trim()) {
+      const trimmedTerm = term.trim();
+
+      if (!trimmedTerm) {
         setResults([]);
         setError(null);
+        setIsSearching(false);
         return;
       }
 
@@ -63,14 +68,22 @@ export default function SearchScreen() {
 
       setIsSearching(true);
       try {
-        const entries = await searchEntries(db, term, 30);
+        const entries = await searchEntries(db, trimmedTerm, 30);
+        if (latestRequestId.current !== requestId) {
+          return;
+        }
         setResults(entries);
         setError(entries.length === 0 ? 'No results found.' : null);
       } catch (err) {
+        if (latestRequestId.current !== requestId) {
+          return;
+        }
         console.error(err);
         setError('Something went wrong while searching.');
       } finally {
-        setIsSearching(false);
+        if (latestRequestId.current === requestId) {
+          setIsSearching(false);
+        }
       }
     },
     [db]
@@ -82,17 +95,13 @@ export default function SearchScreen() {
     () => (
       <View className="gap-6 px-6 pb-6">
         <View className="gap-2 pt-10">
-          <Text className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-500">English Dictionary</Text>
-          <Text className="text-3xl font-bold text-slate-900">Explore definitions and usage examples</Text>
-          <Text className="text-base leading-6 text-slate-600">
-            Search English terms offline using the preloaded WordNet database.
-          </Text>
+          <Text className="text-3xl font-bold text-slate-900">English Dictionary</Text>
         </View>
         <SearchInput
           value={query}
-          onChangeText={setQuery}
+          onChangeText={handleSearch}
           onSubmit={handleSearch}
-          disabled={initializing || isSearching || !isDatabaseReady}
+          disabled={initializing || !isDatabaseReady}
         />
         {initializing ? (
           <View className="flex-row items-center gap-3 rounded-xl bg-blue-50 px-4 py-3">
@@ -107,7 +116,7 @@ export default function SearchScreen() {
         ) : null}
       </View>
     ),
-    [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
+    [error, handleSearch, initializing, isDatabaseReady, query]
   );
 
   const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
