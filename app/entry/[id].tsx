@@ -114,12 +114,12 @@ export default function EntryScreen() {
   }, [entryId]);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-slate-100">
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTintColor: '#1e293b',
-          headerStyle: { backgroundColor: '#f8fafc' },
+          headerTintColor: '#0f172a',
+          headerStyle: { backgroundColor: '#e2e8f0' },
           title: primaryEntry ? primaryEntry.word : loading ? 'Loading…' : 'Entry',
         }}
       />
@@ -131,35 +131,55 @@ export default function EntryScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 justify-center px-6">
-          <View className="rounded-2xl border border-rose-100 bg-rose-50 p-6">
+          <View className="rounded-3xl border border-rose-100 bg-rose-50/90 p-6 shadow-md shadow-rose-200/60">
             <Text className="text-base leading-6 text-rose-700">{error}</Text>
           </View>
         </View>
       ) : primaryEntry ? (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
-          <View className="space-y-6">
-            <View className="gap-2">
-              <Text className="text-4xl font-bold text-slate-900">{primaryEntry.word}</Text>
+          <View className="gap-8">
+            <View className="overflow-hidden rounded-[32px] bg-slate-900 p-8 shadow-2xl shadow-slate-900/40">
+              <Text className="text-4xl font-bold text-white">{primaryEntry.word}</Text>
               {partsOfSpeech.length > 0 ? (
-                <Text className="text-sm uppercase tracking-wide text-slate-500">
-                  {partsOfSpeech.join(' • ')}
-                </Text>
+                <View className="mt-4 flex-row flex-wrap gap-2">
+                  {partsOfSpeech.map((pos) => (
+                    <View key={pos} className="rounded-full bg-white/10 px-4 py-1.5">
+                      <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{pos}</Text>
+                    </View>
+                  ))}
+                </View>
               ) : null}
+              <Text className="mt-6 text-base leading-7 text-white/80">
+                Detailed senses and curated usage examples help you understand how this word adapts across
+                contexts.
+              </Text>
             </View>
 
-            <View className="space-y-4">
+            <View className="gap-5">
               {entries.map((item) => (
-                <View key={item.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <View className="flex-row items-baseline justify-between gap-3">
-                    {item.pos ? (
-                      <Text className="text-sm uppercase tracking-wide text-slate-500">{item.pos}</Text>
-                    ) : null}
-                    <Text className="text-xs font-medium text-slate-400">Sense {item.sense}</Text>
+                <View
+                  key={item.id}
+                  className="gap-4 rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-lg shadow-slate-200/70"
+                >
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="gap-2">
+                      {item.pos ? (
+                        <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-600">{item.pos}</Text>
+                      ) : null}
+                      <Text className="text-sm font-medium uppercase tracking-[0.3em] text-slate-400">
+                        Sense {item.sense}
+                      </Text>
+                    </View>
+                    <View className="rounded-2xl bg-blue-50 px-3 py-1">
+                      <Text className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-700">Definition</Text>
+                    </View>
                   </View>
-                  <Text className="mt-3 text-base leading-7 text-slate-700">{item.definition}</Text>
+                  <Text className="text-base leading-7 text-slate-700">{item.definition}</Text>
                   {item.examples.length > 0 ? (
-                    <View className="mt-4 space-y-2">
-                      <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
+                    <View className="gap-2 rounded-2xl bg-slate-50/80 p-4">
+                      <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                        Usage examples
+                      </Text>
                       {item.examples.map((example, index) => (
                         <Text key={index} className="text-base leading-6 text-slate-700">
                           • {example}
