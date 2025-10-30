@@ -3,12 +3,12 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-import { getEntryById, initializeDatabase } from '@/lib/database';
+import { getEntriesByWord, getEntryById, initializeDatabase } from '@/lib/database';
 import type { DictionaryEntry } from '@/types/dictionary';
 
 export default function EntryScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
-  const [entry, setEntry] = useState<DictionaryEntry | null>(null);
+  const [entries, setEntries] = useState<DictionaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +21,21 @@ export default function EntryScreen() {
     return Number.isFinite(parsed) ? parsed : NaN;
   }, [params.id]);
 
+  const primaryEntry = entries.length > 0 ? entries[0] : null;
+  const partsOfSpeech = useMemo(() => {
+    if (entries.length === 0) {
+      return [] as string[];
+    }
+
+    return Array.from(
+      new Set(
+        entries
+          .map((item) => item.pos)
+          .filter((pos): pos is string => typeof pos === 'string' && pos.length > 0)
+      )
+    );
+  }, [entries]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -28,7 +43,7 @@ export default function EntryScreen() {
       if (!Number.isFinite(entryId)) {
         if (isMounted) {
           setError('Unable to determine which entry to display.');
-          setEntry(null);
+          setEntries([]);
           setLoading(false);
         }
         return;
@@ -37,7 +52,7 @@ export default function EntryScreen() {
       if (isMounted) {
         setLoading(true);
         setError(null);
-        setEntry(null);
+        setEntries([]);
       }
 
       try {
@@ -50,15 +65,39 @@ export default function EntryScreen() {
 
         if (!result) {
           setError('We could not find the requested entry.');
-          setEntry(null);
+          setEntries([]);
         } else {
-          setEntry(result);
+          const relatedEntries = await getEntriesByWord(db, result.word);
+
+          if (!isMounted) {
+            return;
+          }
+
+          const combinedEntries = [...relatedEntries, result];
+          const dedupedEntries: DictionaryEntry[] = [];
+          const seenIds = new Set<number>();
+
+          for (const item of combinedEntries) {
+            if (!seenIds.has(item.id)) {
+              dedupedEntries.push(item);
+              seenIds.add(item.id);
+            }
+          }
+
+          dedupedEntries.sort((a, b) => {
+            if (a.sense !== b.sense) {
+              return a.sense - b.sense;
+            }
+            return a.id - b.id;
+          });
+
+          setEntries(dedupedEntries);
         }
       } catch (err) {
         console.error(err);
         if (isMounted) {
           setError('Failed to load the dictionary entry.');
-          setEntry(null);
+          setEntries([]);
         }
       } finally {
         if (isMounted) {
@@ -81,7 +120,7 @@ export default function EntryScreen() {
           headerShown: true,
           headerTintColor: '#1e293b',
           headerStyle: { backgroundColor: '#f8fafc' },
-          title: entry ? entry.word : loading ? 'Loading…' : 'Entry',
+          title: primaryEntry ? primaryEntry.word : loading ? 'Loading…' : 'Entry',
         }}
       />
 
@@ -96,34 +135,41 @@ export default function EntryScreen() {
             <Text className="text-base leading-6 text-rose-700">{error}</Text>
           </View>
         </View>
-      ) : entry ? (
+      ) : primaryEntry ? (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 32 }}>
           <View className="space-y-6">
             <View className="gap-2">
-              <Text className="text-4xl font-bold text-slate-900">{entry.word}</Text>
-              <View className="flex-row items-baseline gap-3">
-                {entry.pos ? <Text className="text-sm uppercase tracking-wide text-slate-500">{entry.pos}</Text> : null}
-                <Text className="text-xs font-medium text-slate-400">Sense {entry.sense}</Text>
-              </View>
+              <Text className="text-4xl font-bold text-slate-900">{primaryEntry.word}</Text>
+              {partsOfSpeech.length > 0 ? (
+                <Text className="text-sm uppercase tracking-wide text-slate-500">
+                  {partsOfSpeech.join(' • ')}
+                </Text>
+              ) : null}
             </View>
 
-            <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Definition</Text>
-              <Text className="mt-3 text-base leading-7 text-slate-700">{entry.definition}</Text>
-            </View>
-
-            {entry.examples.length > 0 ? (
-              <View className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
-                <View className="mt-3 space-y-3">
-                  {entry.examples.map((example, index) => (
-                    <Text key={index} className="text-base leading-7 text-slate-700">
-                      • {example}
-                    </Text>
-                  ))}
+            <View className="space-y-4">
+              {entries.map((item) => (
+                <View key={item.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <View className="flex-row items-baseline justify-between gap-3">
+                    {item.pos ? (
+                      <Text className="text-sm uppercase tracking-wide text-slate-500">{item.pos}</Text>
+                    ) : null}
+                    <Text className="text-xs font-medium text-slate-400">Sense {item.sense}</Text>
+                  </View>
+                  <Text className="mt-3 text-base leading-7 text-slate-700">{item.definition}</Text>
+                  {item.examples.length > 0 ? (
+                    <View className="mt-4 space-y-2">
+                      <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
+                      {item.examples.map((example, index) => (
+                        <Text key={index} className="text-base leading-6 text-slate-700">
+                          • {example}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
-              </View>
-            ) : null}
+              ))}
+            </View>
           </View>
         </ScrollView>
       ) : null}
