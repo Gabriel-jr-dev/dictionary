@@ -95,11 +95,7 @@ export default function SearchScreen() {
     () => (
       <View className="gap-6 px-6 pb-6">
         <View className="gap-2 pt-10">
-          <Text className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-500">English Dictionary</Text>
-          <Text className="text-3xl font-bold text-slate-900">Explore definitions and usage examples</Text>
-          <Text className="text-base leading-6 text-slate-600">
-            Search English terms offline using the preloaded WordNet database.
-          </Text>
+          <Text className="text-3xl font-bold text-slate-900">English Dictionary</Text>
         </View>
         <SearchInput
           value={query}
@@ -120,7 +116,7 @@ export default function SearchScreen() {
         ) : null}
       </View>
     ),
-    [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
+    [error, handleSearch, initializing, isDatabaseReady, query]
   );
 
   const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
