@@ -120,7 +120,7 @@ export default function SearchScreen() {
         ) : null}
       </View>
     ),
-    [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
+    [error, handleSearch, initializing, isDatabaseReady, query]
   );
 
   const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
