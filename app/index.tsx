@@ -72,11 +72,8 @@ export default function SearchScreen() {
         if (latestRequestId.current !== requestId) {
           return;
         }
-        const normalizedTerm = trimmedTerm.toLowerCase();
-        const exactMatches = entries.filter((entry) => entry.word.toLowerCase() === normalizedTerm);
-
-        setResults(exactMatches);
-        setError(exactMatches.length === 0 ? 'No results found.' : null);
+        setResults(entries);
+        setError(entries.length === 0 ? 'No results found.' : null);
       } catch (err) {
         if (latestRequestId.current !== requestId) {
           return;
@@ -123,7 +120,7 @@ export default function SearchScreen() {
         ) : null}
       </View>
     ),
-    [error, handleSearch, initializing, isDatabaseReady, query]
+    [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
   );
 
   const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
@@ -177,7 +174,7 @@ export default function SearchScreen() {
             <SearchResultCard
               word={item.word}
               senses={item.senses}
-              onPress={(senseId) =>
+              onSelectSense={(senseId) =>
                 router.push({
                   pathname: '/entry/[id]',
                   params: { id: senseId.toString() },
