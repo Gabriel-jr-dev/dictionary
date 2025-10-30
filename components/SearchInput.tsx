@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowRight, Search, X } from 'lucide-react-native';
 
 interface SearchInputProps {
   value: string;
@@ -35,12 +35,12 @@ export default function SearchInput({
 
   return (
     <View
-      className={`flex-row items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm shadow-slate-900/5 ${
-        isFocused ? 'border-blue-500 bg-white shadow-md shadow-blue-500/10' : 'border-transparent bg-white/95'
+      className={`flex-row items-center gap-3 rounded-[28px] border px-4 py-3 shadow-lg shadow-slate-200/60 ${
+        isFocused ? 'border-blue-500 bg-white' : 'border-transparent bg-white/95'
       }`}
     >
-      <View className={`rounded-xl p-2 ${isFocused ? 'bg-blue-50' : 'bg-slate-100/70'}`}>
-        <Ionicons name="search" size={18} color={isFocused ? '#1d4ed8' : '#475569'} />
+      <View className={`rounded-2xl p-2 ${isFocused ? 'bg-blue-100/80' : 'bg-slate-100/80'}`}>
+        <Search size={18} color={isFocused ? '#1d4ed8' : '#475569'} />
       </View>
       <TextInput
         className="flex-1 text-base text-slate-900"
@@ -60,9 +60,9 @@ export default function SearchInput({
           accessibilityRole="button"
           accessibilityLabel="Clear search"
           onPress={handleClear}
-          className="rounded-xl bg-slate-100/90 p-2"
+          className="rounded-2xl bg-slate-100 px-2 py-2"
         >
-          <Ionicons name="close" size={16} color="#475569" />
+          <X size={16} color="#475569" />
         </Pressable>
       ) : null}
       <Pressable
@@ -71,11 +71,11 @@ export default function SearchInput({
         onPress={handleSubmit}
         disabled={disabled}
         className={`flex-row items-center gap-2 rounded-2xl px-4 py-2 ${
-          disabled ? 'bg-slate-200' : 'bg-blue-600 shadow-lg shadow-blue-600/20'
+          disabled ? 'bg-slate-200' : 'bg-blue-600 shadow-md shadow-blue-500/30'
         }`}
       >
         <Text className={`text-sm font-semibold ${disabled ? 'text-slate-500' : 'text-white'}`}>Search</Text>
-        {!disabled ? <Ionicons name="arrow-forward" size={16} color="#ffffff" /> : null}
+        {!disabled ? <ArrowRight size={16} color="#ffffff" /> : null}
       </Pressable>
     </View>
   );
