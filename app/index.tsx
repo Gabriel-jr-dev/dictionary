@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 import SearchInput from '@/components/SearchInput';
 import { SQLiteDatabase } from 'expo-sqlite/next';
@@ -18,7 +18,6 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<SQLiteDatabase | null>(null);
   const latestRequestId = useRef(0);
-  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
