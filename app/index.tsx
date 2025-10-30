@@ -72,8 +72,11 @@ export default function SearchScreen() {
         if (latestRequestId.current !== requestId) {
           return;
         }
-        setResults(entries);
-        setError(entries.length === 0 ? 'No results found.' : null);
+        const normalizedTerm = trimmedTerm.toLowerCase();
+        const exactMatches = entries.filter((entry) => entry.word.toLowerCase() === normalizedTerm);
+
+        setResults(exactMatches);
+        setError(exactMatches.length === 0 ? 'No results found.' : null);
       } catch (err) {
         if (latestRequestId.current !== requestId) {
           return;
@@ -174,7 +177,7 @@ export default function SearchScreen() {
             <SearchResultCard
               word={item.word}
               senses={item.senses}
-              onSelectSense={(senseId) =>
+              onPress={(senseId) =>
                 router.push({
                   pathname: '/entry/[id]',
                   params: { id: senseId.toString() },
