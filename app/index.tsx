@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 import SearchInput from '@/components/SearchInput';
 import { SQLiteDatabase } from 'expo-sqlite/next';
@@ -18,7 +18,6 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<SQLiteDatabase | null>(null);
   const latestRequestId = useRef(0);
-  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
@@ -93,34 +92,37 @@ export default function SearchScreen() {
 
   const header = useMemo(
     () => (
-      <View className="gap-6 px-6 pb-6">
-        <View className="gap-2 pt-10">
-          <Text className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-500">English Dictionary</Text>
-          <Text className="text-3xl font-bold text-slate-900">Explore definitions and usage examples</Text>
+      <View className="gap-6 px-6 pb-8 pt-10">
+        <View className="gap-3">
+          <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500">English dictionary</Text>
+          <Text className="text-3xl font-bold text-slate-900">Find definitions in seconds</Text>
           <Text className="text-base leading-6 text-slate-600">
-            Search English terms offline using the preloaded WordNet database.
+            Look up offline WordNet entries with rich definitions and usage examples.
           </Text>
         </View>
-        <SearchInput
-          value={query}
-          onChangeText={handleSearch}
-          onSubmit={handleSearch}
-          disabled={initializing || !isDatabaseReady}
-        />
-        {initializing ? (
-          <View className="flex-row items-center gap-3 rounded-xl bg-blue-50 px-4 py-3">
-            <ActivityIndicator size="small" color="#2563eb" />
-            <Text className="text-sm text-blue-700">Preparing the database…</Text>
-          </View>
-        ) : null}
-        {error ? (
-          <View className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3">
-            <Text className="text-sm text-rose-700">{error}</Text>
-          </View>
-        ) : null}
+
+        <View className="gap-3">
+          <SearchInput
+            value={query}
+            onChangeText={handleSearch}
+            onSubmit={handleSearch}
+            disabled={initializing || !isDatabaseReady}
+          />
+          {initializing ? (
+            <View className="flex-row items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3">
+              <ActivityIndicator size="small" color="#2563eb" />
+              <Text className="text-sm text-blue-700">Loading the dictionary database…</Text>
+            </View>
+          ) : null}
+          {error ? (
+            <View className="rounded-2xl border border-rose-100 bg-rose-50/90 px-4 py-3">
+              <Text className="text-sm text-rose-700">{error}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
     ),
-    [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
+    [error, handleSearch, initializing, isDatabaseReady, query]
   );
 
   const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
@@ -186,9 +188,10 @@ export default function SearchScreen() {
         ListEmptyComponent={
           isDatabaseReady && query.trim().length > 0 && !isSearching && !error ? (
             <View className="px-6">
-              <View className="rounded-2xl border border-slate-200 bg-white p-6">
+              <View className="items-start gap-4 rounded-3xl border border-slate-200 border-dashed bg-white/95 p-6">
+                <Text className="text-lg font-semibold text-slate-900">No matches yet</Text>
                 <Text className="text-base leading-6 text-slate-600">
-                  We could not find any matches. Try adjusting your query or searching for a different term.
+                  Try another spelling, search for a synonym, or broaden your term to explore related entries.
                 </Text>
               </View>
             </View>
