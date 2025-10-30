@@ -28,17 +28,7 @@ function SenseBlock({
         {sense.pos ? <Text className="text-sm uppercase tracking-wide text-slate-500">{sense.pos}</Text> : null}
         <Text className="text-xs font-medium text-slate-400">Sense {sense.sense}</Text>
       </View>
-      <Text className="text-base leading-6 text-slate-700">{sense.definition}</Text>
-      {sense.examples.length > 0 ? (
-        <View className="mt-3 space-y-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-slate-500">Examples</Text>
-          {sense.examples.map((example, index) => (
-            <Text key={index} className="text-sm leading-5 text-slate-600">
-              • {example}
-            </Text>
-          ))}
-        </View>
-      ) : null}
+      <Text className="text-sm font-medium text-blue-600">View definition</Text>
     </Container>
   );
 }
