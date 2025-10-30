@@ -105,7 +105,7 @@ export default function SearchScreen() {
           value={query}
           onChangeText={handleSearch}
           onSubmit={handleSearch}
-          disabled={initializing || isSearching || !isDatabaseReady}
+          disabled={initializing || !isDatabaseReady}
         />
         {initializing ? (
           <View className="flex-row items-center gap-3 rounded-xl bg-blue-50 px-4 py-3">
