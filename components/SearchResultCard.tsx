@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowUpRight } from 'lucide-react-native';
 
 import type { DictionarySense } from '@/types/dictionary';
 
@@ -52,8 +52,8 @@ function SearchResultCard({ word, senses, onSelectSense }: SearchResultCardProps
 
   return (
     <Container
-      className={`overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/10 ${
-        isInteractive ? 'active:bg-slate-100' : ''
+      className={`overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-lg shadow-slate-200/70 ${
+        isInteractive ? 'active:bg-slate-100/60' : ''
       }`}
       onPress={isInteractive ? handlePress : undefined}
       accessibilityRole={isInteractive ? 'button' : undefined}
@@ -78,8 +78,8 @@ function SearchResultCard({ word, senses, onSelectSense }: SearchResultCardProps
           ) : null}
         </View>
         {isInteractive ? (
-          <View className="rounded-xl bg-blue-50 p-2">
-            <Ionicons name="open-outline" size={18} color="#1d4ed8" />
+          <View className="rounded-2xl bg-blue-100/70 p-2">
+            <ArrowUpRight size={18} color="#1d4ed8" />
           </View>
         ) : null}
       </View>
