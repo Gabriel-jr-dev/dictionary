@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import SearchInput from '@/components/SearchInput';
-import SearchResultCard from '@/components/SearchResultCard';
 import { SQLiteDatabase } from 'expo-sqlite/next';
 
+import SearchResultCard from '@/components/SearchResultCard';
 import { initializeDatabase, searchEntries } from '@/lib/database';
-import type { DictionaryEntry } from '@/types/dictionary';
+import type { DictionaryEntry, DictionaryWordDetails } from '@/types/dictionary';
 
 export default function SearchScreen() {
   const [initializing, setInitializing] = useState(true);
@@ -110,11 +110,48 @@ export default function SearchScreen() {
     [error, handleSearch, initializing, isDatabaseReady, isSearching, query]
   );
 
+  const groupedResults = useMemo<DictionaryWordDetails[]>(() => {
+    if (results.length === 0) {
+      return [];
+    }
+
+    const groups: DictionaryWordDetails[] = [];
+    const lookup = new Map<string, DictionaryWordDetails>();
+
+    for (const entry of results) {
+      let group = lookup.get(entry.word);
+
+      if (!group) {
+        group = { word: entry.word, senses: [] };
+        lookup.set(entry.word, group);
+        groups.push(group);
+      }
+
+      group.senses.push({
+        id: entry.id,
+        pos: entry.pos,
+        sense: entry.sense,
+        definition: entry.definition,
+        examples: entry.examples,
+      });
+    }
+
+    return groups.map((group) => ({
+      word: group.word,
+      senses: [...group.senses].sort((a, b) => {
+        if (a.sense !== b.sense) {
+          return a.sense - b.sense;
+        }
+        return a.id - b.id;
+      }),
+    }));
+  }, [results]);
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <FlatList
-        data={results}
-        keyExtractor={(item) => item.id.toString()}
+        data={groupedResults}
+        keyExtractor={(item) => `${item.word}-${item.senses[0]?.id ?? '0'}`}
         contentContainerStyle={{ paddingBottom: 32 }}
         ListHeaderComponent={header}
         ItemSeparatorComponent={() => <View className="h-4" />}
@@ -122,11 +159,12 @@ export default function SearchScreen() {
         renderItem={({ item }) => (
           <View className="px-6">
             <SearchResultCard
-              entry={item}
-              onPress={() =>
+              word={item.word}
+              senses={item.senses}
+              onSelectSense={(senseId) =>
                 router.push({
                   pathname: '/entry/[id]',
-                  params: { id: item.id.toString() },
+                  params: { id: senseId.toString() },
                 })
               }
             />
