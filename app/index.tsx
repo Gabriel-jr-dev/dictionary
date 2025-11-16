@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 import SearchInput from '@/components/SearchInput';
 import { SQLiteDatabase } from 'expo-sqlite/next';
@@ -11,6 +11,7 @@ import { initializeDatabase, searchEntries } from '@/lib/database';
 import type { DictionaryEntry, DictionaryWordDetails } from '@/types/dictionary';
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [initializing, setInitializing] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [query, setQuery] = useState('');
